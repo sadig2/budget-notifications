@@ -23,6 +23,13 @@ class T_Budget(models.Model):
         unique_together = (("shop_id", "month"),)
 
 
+# constructor to save initial state of amounts, to decide whether to send notification again or not 
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.notification_50 = True if self.budget_amount > self.amount_spent >= self.budget_amount//2  else False
+        self.notification_100 = True if self.budget_amount <= self.amount_spent else False
+
+
     # set status on edit of budget
     def save(self) -> None:
         shop = self.shop_id
@@ -39,8 +46,8 @@ class T_Budget(models.Model):
 def post_notify(sender, instance, *args, **kwargs):
     budget = instance.budget_amount
     spent = instance.amount_spent
-    if  budget > spent >= budget//2:
+    if  budget > spent >= budget//2 and not instance.notification_50:
         print(f'{instance.shop_id.name} shop exceeded 50 percent')
-    if budget <= spent:
+    if budget <= spent and not instance.notification_100:
         print(f'{instance.shop_id.name} shop exceeded 100 percent and will go offline')
 
